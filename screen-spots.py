@@ -1,7 +1,8 @@
-from talon import ctrl, Module, actions, storage, imgui, ui, canvas, settings
+from talon import ctrl, Module, actions, storage, imgui, ui, canvas, settings, Context
 from talon.skia import  Paint
 
 mod = Module()
+ctx = Context()
 
 mod.setting(
     "screen_spots_heatmap_color",
@@ -26,6 +27,11 @@ mod.setting(
 
 # Initialize with the spots in storage if there are any. All keys should be strings
 spot_dictionary = storage.get("screen-spots", {})
+ctx.lists["user.spot_list"] = list(spot_dictionary.keys())
+mod.list("spot_list", desc="List of currently set spots")
+@mod.capture(rule=("{user.spot_list}"))#return based on the current global values for spot dictionary
+def spot_list(m) -> str:
+        return (str(m))
 
 heatmap_showing = False
 
@@ -76,6 +82,9 @@ class SpotClass:
         spot_dictionary[spot_key] = [x, y]
         refresh()
         backup_spot()
+        
+        #provide this information to talon every time the list updates
+        ctx.lists["user.spot_list"] = list(spot_dictionary.keys()) 
 
     def toggle_spot_heatmap():
         """Display the spot on the screen"""
@@ -99,6 +108,9 @@ class SpotClass:
                 actions.user.slow_mouse_move(spot[0], spot[1])
             else:
                 actions.mouse_move(spot[0], spot[1])
+            
+            #flicker cursor after moving so it shows in the right place even on parsec
+            actions.user.curse_flick()
             return True
         return False
 
